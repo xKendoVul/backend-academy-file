@@ -38,3 +38,5 @@ export class CreateFileDto {
   @IsOptional()
   updated_at: Date;
 }
+
+export class UpdateFileDto extends CreateFileDto { }
