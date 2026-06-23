@@ -1,28 +1,35 @@
 import { NestFactory } from '@nestjs/core';
-import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
+import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 
 async function bootstrap() {
-  const logger = new Logger('main')
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
-    AppModule,
-    {
-      transport: Transport.TCP,
-      options: {
-        port: Number(process.env.PORT),
-      }
+  const logger = new Logger('main');
+  const app = await NestFactory.create(AppModule);
+
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.TCP,
+    options: {
+      host: '0.0.0.0',
+      port: Number(process.env.PORT) || 3004,
     },
-  );
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({
       forbidNonWhitelisted: true,
-      whitelist: true
+      whitelist: true,
+      transform: true,
     }),
   );
 
-  await app.listen();
-  logger.log(`Microservicio de archivos de estudiantes corriendo en el puerto ${process.env.PORT}`)
+  app.enableCors();
+
+  await app.startAllMicroservices();
+  await app.listen(Number(process.env.PORT) || 3004);
+  logger.log(`Files MS corriendo en puerto ${process.env.PORT || 3004}`);
 }
-bootstrap();
+bootstrap().catch((err) => {
+  console.error('Error starting application:', err);
+  process.exit(1);
+});
